@@ -1,8 +1,8 @@
 name: Set BizKit project dates on issue created
 
 on:
-  issues:
-    types: [opened]
+  repository_dispatch:
+    types: [project-item-created]
 
 jobs:
   set-dates:

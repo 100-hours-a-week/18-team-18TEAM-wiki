@@ -4,6 +4,10 @@ on:
   issues:
     types: [opened]
 
+permissions:
+  issues: write
+  contents: read
+
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -12,17 +16,34 @@ jobs:
       - name: Get parent issue number
         id: parent
         run: |
-          PARENT=$(jq -r '.issue.body' <<< "$GITHUB_EVENT_PATH" | grep -oP '(?<=parent: )\d+')
+          BODY=$(jq -r '.issue.body' "$GITHUB_EVENT_PATH")
+          PARENT=$(printf "%s\n" "$BODY" | grep -oE '#[0-9]+' | head -1 | tr -d '#')
           echo "parent_issue=$PARENT" >> $GITHUB_OUTPUT
 
       - name: Get labels from parent
         id: labels
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          LABELS=$(gh api repos/${{ github.repository }}/issues/${{ steps.parent.outputs.parent_issue }} | jq -r '.labels[].name')
+          LABELS=$(gh api repos/${{ github.repository }}/issues/${{ steps.parent.outputs.parent_issue }} --jq '.labels[].name')
           echo "labels=$LABELS" >> $GITHUB_OUTPUT
 
       - name: Apply labels to sub issue
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          for L in ${{ steps.labels.outputs.labels }}; do
-            gh api repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/labels -f labels="[$L]"
+          LABELS=(${{ steps.labels.outputs.labels }})
+
+          if [ ${#LABELS[@]} -eq 0 ]; then
+            echo "No labels to sync"
+            exit 0
+          fi
+
+          ARGS=()
+          for L in "${LABELS[@]}"; do
+            ARGS+=(-f labels[]="$L")
           done
+
+          gh api \
+            repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/labels \
+            "${ARGS[@]}"
