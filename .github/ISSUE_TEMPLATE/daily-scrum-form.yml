@@ -1,0 +1,23 @@
+name: Daily Scrum
+description: Daily Scrum report
+title: "Daily-Scrum {{ date }}"
+projects:
+  - 281
+
+body:
+  - type: input
+    id: start_date
+    attributes:
+      label: Start date
+      default: "{{ date }}"
+
+  - type: input
+    id: end_date
+    attributes:
+      label: End date
+      default: "{{ date }}"
+
+  - type: markdown
+    attributes:
+      value: |
+        {{ template: daily-scrum-template.md }}
