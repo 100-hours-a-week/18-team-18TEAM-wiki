@@ -6,13 +6,13 @@ projects:
 
 body:
   - type: input
-    id: start_date
+    id: start_at
     attributes:
       label: Start date
       default: "{{ date }}"
 
   - type: input
-    id: end_date
+    id: end_at
     attributes:
       label: End date
       default: "{{ date }}"
