@@ -1,0 +1,28 @@
+name: sync labels to sub-issue
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get parent issue number
+        id: parent
+        run: |
+          PARENT=$(jq -r '.issue.body' <<< "$GITHUB_EVENT_PATH" | grep -oP '(?<=parent: )\d+')
+          echo "parent_issue=$PARENT" >> $GITHUB_OUTPUT
+
+      - name: Get labels from parent
+        id: labels
+        run: |
+          LABELS=$(gh api repos/${{ github.repository }}/issues/${{ steps.parent.outputs.parent_issue }} | jq -r '.labels[].name')
+          echo "labels=$LABELS" >> $GITHUB_OUTPUT
+
+      - name: Apply labels to sub issue
+        run: |
+          for L in ${{ steps.labels.outputs.labels }}; do
+            gh api repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/labels -f labels="[$L]"
+          done
