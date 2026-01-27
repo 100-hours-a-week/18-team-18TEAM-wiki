@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Get today
         id: today
+        env:
+          TZ: Asia/Seoul
         run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
 
       - name: Set start_at
@@ -19,6 +21,13 @@ jobs:
         with:
           project-url: https://github.com/orgs/100-hours-a-week/projects/281
           github-token: ${{ secrets.UPDATE_PROJECT_V2_PAT }}
+          all-items: true
+          skip-update-script: |
+            const isIssue = item.type === 'ISSUE'
+            const issueNumber = item.content?.number
+            const targetNumber = context.payload.client_payload.number
+            const hasStart = !!item.fieldValues['start_at']
+            return !isIssue || issueNumber !== targetNumber || hasStart
           field-name: "start_at"
           field-value: "${{ steps.today.outputs.date }}"
 
@@ -27,5 +36,12 @@ jobs:
         with:
           project-url: https://github.com/orgs/100-hours-a-week/projects/281
           github-token: ${{ secrets.UPDATE_PROJECT_V2_PAT }}
+          all-items: true
+          skip-update-script: |
+            const isIssue = item.type === 'ISSUE'
+            const issueNumber = item.content?.number
+            const targetNumber = context.payload.client_payload.number
+            const hasEnd = !!item.fieldValues['end_at']
+            return !isIssue || issueNumber !== targetNumber || hasEnd
           field-name: "end_at"
           field-value: "${{ steps.today.outputs.date }}"
